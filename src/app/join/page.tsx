@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function JoinPage() {
   const router = useRouter();
@@ -55,8 +56,9 @@ export default function JoinPage() {
     <main className="flex-1 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
-          <Link href="/" className="text-3xl font-black gradient-text">
-            AuraRiddle
+          <Link href="/" className="inline-flex items-center gap-2 justify-center">
+            <Image src="/logo.png" alt="AuraRiddle" width={40} height={40} className="rounded-lg" />
+            <span className="text-3xl font-black gradient-text">AuraRiddle</span>
           </Link>
           <h2 className="text-xl text-gray-300">Join an Event</h2>
         </div>

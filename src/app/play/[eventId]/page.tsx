@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getSupabaseBrowser, type QuestionPublic } from "@/lib/supabase";
 
 interface ParticipantInfo {
@@ -36,6 +37,7 @@ export default function PlayPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [answered, setAnswered] = useState(false);
+  const [letterHints, setLetterHints] = useState<string[]>([]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const leaderboardPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -75,6 +77,7 @@ export default function PlayPage() {
           setLetters(new Array(totalLetters).fill(""));
           setFeedback({ type: null, message: "" });
           setAnswered(false);
+          setLetterHints([]);
 
           // Focus first input after a short delay
           setTimeout(() => {
@@ -181,6 +184,7 @@ export default function PlayPage() {
     // Clear feedback on new input
     if (feedback.type === "incorrect") {
       setFeedback({ type: null, message: "" });
+      setLetterHints([]);
     }
 
     // Auto-advance to next input
@@ -252,14 +256,15 @@ export default function PlayPage() {
       if (data.correct) {
         setFeedback({ type: "correct", message: data.message });
         setAnswered(true);
+        setLetterHints([]);
         fetchLeaderboard();
       } else {
         setFeedback({ type: "incorrect", message: data.message });
-        // Allow retry - clear letters
-        setTimeout(() => {
-          setLetters(new Array(letters.length).fill(""));
-          inputRefs.current[0]?.focus();
-        }, 1000);
+        // Show per-letter hints (green/yellow/gray)
+        if (data.letter_hints) {
+          setLetterHints(data.letter_hints);
+        }
+        // Don't clear letters — let user see hints and correct their answer
       }
     } catch {
       setFeedback({ type: "incorrect", message: "Network error. Try again!" });
@@ -280,6 +285,9 @@ export default function PlayPage() {
       const boxes: React.ReactNode[] = [];
       for (let i = 0; i < pattern[w]; i++) {
         const idx = globalIndex;
+        const hintClass = letterHints[idx]
+          ? `hint-${letterHints[idx]}`
+          : "";
         boxes.push(
           <input
             key={idx}
@@ -294,7 +302,7 @@ export default function PlayPage() {
             disabled={answered || submitting}
             className={`letter-box ${letters[idx] ? "filled" : ""} ${
               feedback.type === "correct" ? "correct" : ""
-            } ${feedback.type === "incorrect" ? "incorrect" : ""}`}
+            } ${hintClass}`}
             autoComplete="off"
             autoCapitalize="characters"
           />
@@ -332,13 +340,16 @@ export default function PlayPage() {
     <main className="flex-1 p-4 sm:p-6 max-w-5xl mx-auto w-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold gradient-text">
-            {eventName || "AuraRiddle"}
-          </h1>
-          <p className="text-sm text-gray-400">
-            Playing as <span className="text-gold-300 font-semibold">{participant.name}</span>
-          </p>
+        <div className="flex items-center gap-3">
+          <Image src="/logo.png" alt="AuraRiddle" width={36} height={36} className="rounded-lg" />
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold gradient-text">
+              {eventName || "AuraRiddle"}
+            </h1>
+            <p className="text-sm text-gray-400">
+              Playing as <span className="text-gold-300 font-semibold">{participant.name}</span>
+            </p>
+          </div>
         </div>
         <div className="text-right">
           <div className="text-2xl font-black text-gold-300">{myScore}</div>
@@ -403,6 +414,21 @@ export default function PlayPage() {
               {/* Letter Boxes */}
               <div className="glass-card p-6 sm:p-8">
                 {renderLetterBoxes()}
+
+                {/* Hint Legend */}
+                {letterHints.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-4 justify-center text-xs text-neutral-400">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded bg-green-600 inline-block" /> Correct spot
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded bg-yellow-600 inline-block" /> Wrong spot
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded bg-neutral-700 inline-block" /> Not in word
+                    </span>
+                  </div>
+                )}
 
                 {/* Feedback */}
                 {feedback.type && (

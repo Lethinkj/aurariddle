@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 export default function HomePage() {
   return (
@@ -8,6 +9,9 @@ export default function HomePage() {
       <div className="max-w-2xl w-full text-center space-y-12">
         {/* Logo / Title */}
         <div className="space-y-4 animate-slide-up">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Image src="/logo.png" alt="AuraRiddle" width={56} height={56} className="rounded-xl" />
+          </div>
           <h1 className="text-5xl sm:text-7xl font-black gradient-text tracking-tight">
             AuraRiddle
           </h1>

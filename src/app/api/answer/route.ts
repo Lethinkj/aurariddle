@@ -107,6 +107,36 @@ export async function POST(req: NextRequest) {
                  `+${points} points!`,
       });
     } else {
+      // Generate per-letter hints (Wordle-style)
+      // green = correct letter in correct position
+      // yellow = correct letter but wrong position
+      // gray = letter not in the answer
+      const submittedLetters = normalizedSubmitted.replace(/\s/g, "").split("");
+      const correctLetters = normalizedCorrect.replace(/\s/g, "").split("");
+
+      const hints: string[] = new Array(submittedLetters.length).fill("gray");
+      const correctUsed: boolean[] = new Array(correctLetters.length).fill(false);
+
+      // First pass: mark greens (exact position match)
+      for (let i = 0; i < submittedLetters.length; i++) {
+        if (i < correctLetters.length && submittedLetters[i] === correctLetters[i]) {
+          hints[i] = "green";
+          correctUsed[i] = true;
+        }
+      }
+
+      // Second pass: mark yellows (letter exists but wrong position)
+      for (let i = 0; i < submittedLetters.length; i++) {
+        if (hints[i] === "green") continue;
+        for (let j = 0; j < correctLetters.length; j++) {
+          if (!correctUsed[j] && submittedLetters[i] === correctLetters[j]) {
+            hints[i] = "yellow";
+            correctUsed[j] = true;
+            break;
+          }
+        }
+      }
+
       // Record incorrect answer (optional - don't block retries)
       if (!existingAnswer) {
         await supabase.from("answers").insert({
@@ -120,7 +150,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         correct: false,
         points: 0,
-        message: "Incorrect! Try again.",
+        letter_hints: hints,
+        message: "Not quite! Check the hints and try again.",
       });
     }
   } catch {
