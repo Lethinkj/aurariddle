@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #1a1a2e;
+  --accent: #6c5ce7;
+  --accent-light: #a29bfe;
+  --success: #00b894;
+  --danger: #e17055;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Letter Box Styles */
+.letter-box {
+  @apply w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold uppercase
+    border-2 border-gray-600 rounded-lg bg-gray-800/50 text-white
+    outline-none transition-all duration-200;
+}
+
+.letter-box:focus {
+  @apply border-purple-500 bg-gray-700/50 shadow-lg shadow-purple-500/20;
+}
+
+.letter-box.filled {
+  @apply border-purple-400 bg-purple-900/30;
+  animation: popIn 0.2s ease-out;
+}
+
+.letter-box.correct {
+  @apply border-green-500 bg-green-900/40 shadow-lg shadow-green-500/30;
+}
+
+.letter-box.incorrect {
+  @apply border-red-500 bg-red-900/40;
+  animation: shake 0.4s ease-in-out;
+}
+
+/* Gradient Text */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600;
+}
+
+/* Glass Card */
+.glass-card {
+  @apply bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl;
+}
+
+/* Button styles */
+.btn-primary {
+  @apply px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold
+    rounded-xl hover:from-purple-500 hover:to-pink-500 transition-all duration-200
+    shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40
+    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-purple-500/25;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 bg-white/10 text-white font-semibold rounded-xl
+    hover:bg-white/20 transition-all duration-200 border border-white/10;
+}
+
+.btn-danger {
+  @apply px-6 py-3 bg-red-600/80 text-white font-semibold rounded-xl
+    hover:bg-red-500/80 transition-all duration-200;
+}
+
+.btn-success {
+  @apply px-6 py-3 bg-green-600/80 text-white font-semibold rounded-xl
+    hover:bg-green-500/80 transition-all duration-200;
+}
+
+/* Input styles */
+.input-field {
+  @apply w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white
+    placeholder-gray-500 outline-none focus:border-purple-500 focus:ring-1
+    focus:ring-purple-500 transition-all duration-200;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(108, 92, 231, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(108, 92, 231, 0.5);
+}
+
+/* Leaderboard rank colors */
+.rank-1 { @apply text-yellow-400; }
+.rank-2 { @apply text-gray-300; }
+.rank-3 { @apply text-amber-600; }
