@@ -42,7 +42,7 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
           <Link href="/" className="text-3xl font-black gradient-text">
-            HardWord
+            AuraRiddle
           </Link>
           <h2 className="text-xl text-gray-300">Admin Login</h2>
         </div>
@@ -85,7 +85,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="text-center text-sm text-gray-500">
-          <Link href="/" className="hover:text-purple-400 transition-colors">
+          <Link href="/" className="hover:text-gold-400 transition-colors">
             ← Back to Home
           </Link>
         </p>

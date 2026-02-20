@@ -3,15 +3,15 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #12121a;
-  --bg-card: #1a1a2e;
-  --accent: #6c5ce7;
-  --accent-light: #a29bfe;
-  --success: #00b894;
-  --danger: #e17055;
+  --bg-primary: #050505;
+  --bg-secondary: #0a0a0a;
+  --bg-card: #111111;
+  --accent: #d4a017;
+  --accent-light: #fbbf24;
+  --success: #22c55e;
+  --danger: #ef4444;
   --text-primary: #ffffff;
-  --text-secondary: #a0a0b0;
+  --text-secondary: #9ca3af;
 }
 
 body {
@@ -20,47 +20,49 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* Letter Box Styles */
+/* Letter Box Styles — responsive for mobile */
 .letter-box {
-  @apply w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold uppercase
-    border-2 border-gray-600 rounded-lg bg-gray-800/50 text-white
-    outline-none transition-all duration-200;
+  @apply w-10 h-12 sm:w-12 sm:h-14 md:w-14 md:h-16 text-center text-lg sm:text-xl md:text-2xl font-bold uppercase
+    border-2 border-neutral-700 rounded-lg bg-neutral-900/80 text-white
+    outline-none transition-all duration-200 flex-shrink-0;
+  min-width: 2.25rem;
 }
 
 .letter-box:focus {
-  @apply border-purple-500 bg-gray-700/50 shadow-lg shadow-purple-500/20;
+  @apply border-gold-400 bg-neutral-800/80 shadow-lg;
+  box-shadow: 0 0 12px rgba(212, 160, 23, 0.25);
 }
 
 .letter-box.filled {
-  @apply border-purple-400 bg-purple-900/30;
+  @apply border-gold-500 bg-gold-900/30 text-gold-200;
   animation: popIn 0.2s ease-out;
 }
 
 .letter-box.correct {
-  @apply border-green-500 bg-green-900/40 shadow-lg shadow-green-500/30;
+  @apply border-green-500 bg-green-900/40 text-green-300 shadow-lg shadow-green-500/30;
 }
 
 .letter-box.incorrect {
-  @apply border-red-500 bg-red-900/40;
+  @apply border-red-500 bg-red-900/40 text-red-300;
   animation: shake 0.4s ease-in-out;
 }
 
-/* Gradient Text */
+/* Gradient Text — Gold */
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-gold-400 to-yellow-500;
 }
 
-/* Glass Card */
+/* Glass Card — dark glass */
 .glass-card {
-  @apply bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl;
+  @apply bg-white/[0.03] backdrop-blur-sm border border-white/[0.08] rounded-xl;
 }
 
 /* Button styles */
 .btn-primary {
-  @apply px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold
-    rounded-xl hover:from-purple-500 hover:to-pink-500 transition-all duration-200
-    shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40
-    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-purple-500/25;
+  @apply px-6 py-3 bg-gradient-to-r from-gold-600 to-gold-500 text-black font-semibold
+    rounded-xl hover:from-gold-500 hover:to-gold-400 transition-all duration-200
+    shadow-lg shadow-gold-500/20 hover:shadow-gold-400/40
+    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-gold-500/20;
 }
 
 .btn-secondary {
@@ -81,8 +83,8 @@ body {
 /* Input styles */
 .input-field {
   @apply w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white
-    placeholder-gray-500 outline-none focus:border-purple-500 focus:ring-1
-    focus:ring-purple-500 transition-all duration-200;
+    placeholder-neutral-600 outline-none focus:border-gold-500 focus:ring-1
+    focus:ring-gold-500 transition-all duration-200;
 }
 
 /* Scrollbar */
@@ -95,12 +97,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(108, 92, 231, 0.3);
+  background: rgba(212, 160, 23, 0.25);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(108, 92, 231, 0.5);
+  background: rgba(212, 160, 23, 0.45);
 }
 
 /* Leaderboard rank colors */

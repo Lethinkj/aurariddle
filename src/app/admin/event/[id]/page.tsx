@@ -208,19 +208,19 @@ export default function AdminEventPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <Link href="/admin/dashboard" className="text-sm text-gray-500 hover:text-purple-400 transition-colors">
+          <Link href="/admin/dashboard" className="text-sm text-gray-500 hover:text-gold-400 transition-colors">
             ← Dashboard
           </Link>
           <h1 className="text-2xl font-bold text-white mt-1">{event.name}</h1>
           <div className="flex items-center gap-3 mt-1">
-            <span className="font-mono bg-purple-500/20 text-purple-300 px-3 py-1 rounded-lg text-lg font-bold">
+            <span className="font-mono bg-gold-500/20 text-gold-300 px-3 py-1 rounded-lg text-lg font-bold">
               {event.code}
             </span>
             <span className={`px-2 py-1 text-xs rounded-full border ${
               event.status === "active"
                 ? "bg-green-500/20 text-green-400 border-green-500/30"
                 : event.status === "completed"
-                ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                ? "bg-gold-500/20 text-gold-400 border-gold-500/30"
                 : "bg-gray-500/20 text-gray-400 border-gray-500/30"
             }`}>
               {event.status.toUpperCase()}
@@ -265,9 +265,9 @@ export default function AdminEventPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Current Question Display */}
           {event.status === "active" && currentQuestion && (
-            <div className="glass-card p-6 border-purple-500/30 space-y-4">
+            <div className="glass-card p-6 border-gold-500/30 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider">
+                <h3 className="text-sm font-bold text-gold-400 uppercase tracking-wider">
                   Current Question ({currentQuestion.question_order + 1} / {questions.length})
                 </h3>
                 <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
@@ -361,7 +361,7 @@ export default function AdminEventPage() {
                       key={q.id}
                       className={`glass-card p-4 flex items-center justify-between gap-4 ${
                         q.id === event.current_question_id
-                          ? "border-purple-500/50 bg-purple-500/5"
+                          ? "border-gold-500/50 bg-gold-500/5"
                           : ""
                       }`}
                     >
@@ -383,7 +383,7 @@ export default function AdminEventPage() {
                         </button>
                       )}
                       {q.id === event.current_question_id && (
-                        <span className="text-xs bg-purple-500/30 text-purple-300 px-2 py-1 rounded">
+                        <span className="text-xs bg-gold-500/30 text-gold-300 px-2 py-1 rounded">
                           LIVE
                         </span>
                       )}
@@ -405,7 +405,7 @@ export default function AdminEventPage() {
             {participants.length === 0 ? (
               <p className="text-sm text-gray-500">
                 No players yet. Share the code{" "}
-                <span className="font-mono text-purple-300">{event.code}</span>{" "}
+                <span className="font-mono text-gold-300">{event.code}</span>{" "}
                 for players to join!
               </p>
             ) : (
@@ -431,7 +431,7 @@ export default function AdminEventPage() {
                       </span>
                       <span className="text-white">{p.name}</span>
                     </div>
-                    <span className="text-purple-300 font-mono font-bold">
+                    <span className="text-gold-300 font-mono font-bold">
                       {p.score}
                     </span>
                   </div>
@@ -446,7 +446,7 @@ export default function AdminEventPage() {
               Share with Players
             </h3>
             <div className="text-center">
-              <p className="text-4xl font-black font-mono text-purple-300 tracking-widest">
+              <p className="text-4xl font-black font-mono text-gold-300 tracking-widest">
                 {event.code}
               </p>
               <p className="text-xs text-gray-500 mt-2">

@@ -66,7 +66,7 @@ export default function AdminDashboard() {
     const styles: Record<string, string> = {
       draft: "bg-gray-500/20 text-gray-400 border-gray-500/30",
       active: "bg-green-500/20 text-green-400 border-green-500/30",
-      completed: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+      completed: "bg-gold-500/20 text-gold-400 border-gold-500/30",
     };
     return (
       <span className={`px-2 py-1 text-xs rounded-full border ${styles[status] || styles.draft}`}>
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <Link href="/" className="text-2xl font-black gradient-text">
-            HardWord
+            AuraRiddle
           </Link>
           <p className="text-sm text-gray-400 mt-1">Admin Dashboard</p>
         </div>
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
                 <div className="space-y-1">
                   <h3 className="text-lg font-bold text-white">{event.name}</h3>
                   <div className="flex items-center gap-3 text-sm text-gray-400">
-                    <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-purple-300">
+                    <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-gold-300">
                       {event.code}
                     </span>
                     <span>

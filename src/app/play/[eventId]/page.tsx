@@ -42,7 +42,7 @@ export default function PlayPage() {
 
   // Load participant info from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(`hardword_participant_${eventId}`);
+    const stored = localStorage.getItem(`aurariddle_participant_${eventId}`);
     if (stored) {
       try {
         setParticipant(JSON.parse(stored));
@@ -302,14 +302,14 @@ export default function PlayPage() {
         globalIndex++;
       }
       words.push(
-        <div key={`word-${w}`} className="flex gap-1.5 sm:gap-2">
+        <div key={`word-${w}`} className="flex flex-wrap gap-1 sm:gap-1.5 md:gap-2 justify-center">
           {boxes}
         </div>
       );
     }
 
     return (
-      <div className="flex flex-wrap gap-4 sm:gap-6 justify-center items-center">
+      <div className="flex flex-wrap gap-3 sm:gap-4 md:gap-6 justify-center items-center">
         {words}
       </div>
     );
@@ -334,14 +334,14 @@ export default function PlayPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold gradient-text">
-            {eventName || "HardWord"}
+            {eventName || "AuraRiddle"}
           </h1>
           <p className="text-sm text-gray-400">
-            Playing as <span className="text-purple-300 font-semibold">{participant.name}</span>
+            Playing as <span className="text-gold-300 font-semibold">{participant.name}</span>
           </p>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-black text-purple-300">{myScore}</div>
+          <div className="text-2xl font-black text-gold-300">{myScore}</div>
           <div className="text-xs text-gray-500">Rank #{myRank}</div>
         </div>
       </div>
@@ -445,7 +445,7 @@ export default function PlayPage() {
               <div className="text-5xl">🏆</div>
               <h2 className="text-2xl font-bold text-white">Game Over!</h2>
               <div className="space-y-2">
-                <p className="text-4xl font-black text-purple-300">{myScore} points</p>
+                <p className="text-4xl font-black text-gold-300">{myScore} points</p>
                 <p className="text-gray-400">
                   Final Rank: <span className="text-white font-bold">#{myRank}</span>
                 </p>
@@ -472,7 +472,7 @@ export default function PlayPage() {
                   key={entry.id}
                   className={`flex items-center justify-between rounded-lg px-3 py-2 ${
                     entry.id === participant.participant_id
-                      ? "bg-purple-500/20 border border-purple-500/30"
+                      ? "bg-gold-500/20 border border-gold-500/30"
                       : "bg-white/5"
                   }`}
                 >
@@ -493,7 +493,7 @@ export default function PlayPage() {
                     <span
                       className={`text-sm ${
                         entry.id === participant.participant_id
-                          ? "text-purple-300 font-bold"
+                          ? "text-gold-300 font-bold"
                           : "text-white"
                       }`}
                     >
@@ -501,7 +501,7 @@ export default function PlayPage() {
                       {entry.id === participant.participant_id && " (you)"}
                     </span>
                   </div>
-                  <span className="text-sm font-mono font-bold text-purple-300">
+                  <span className="text-sm font-mono font-bold text-gold-300">
                     {entry.score}
                   </span>
                 </div>

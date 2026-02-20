@@ -8,6 +8,20 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      colors: {
+        gold: {
+          50: "#fffbeb",
+          100: "#fef3c7",
+          200: "#fde68a",
+          300: "#fcd34d",
+          400: "#fbbf24",
+          500: "#d4a017",
+          600: "#b8860b",
+          700: "#92700c",
+          800: "#6b5210",
+          900: "#4a3a0a",
+        },
+      },
       animation: {
         "pop-in": "popIn 0.3s ease-out",
         "shake": "shake 0.5s ease-in-out",
@@ -26,8 +40,8 @@ const config: Config = {
           "75%": { transform: "translateX(8px)" },
         },
         glow: {
-          "0%": { boxShadow: "0 0 5px rgba(34, 197, 94, 0.5)" },
-          "100%": { boxShadow: "0 0 20px rgba(34, 197, 94, 0.8)" },
+          "0%": { boxShadow: "0 0 5px rgba(212, 160, 23, 0.5)" },
+          "100%": { boxShadow: "0 0 20px rgba(212, 160, 23, 0.8)" },
         },
         slideUp: {
           "0%": { transform: "translateY(20px)", opacity: "0" },
