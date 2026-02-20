@@ -52,9 +52,13 @@ CREATE TABLE answers (
   participant_id UUID REFERENCES participants(id) ON DELETE CASCADE NOT NULL,
   is_correct BOOLEAN DEFAULT FALSE,
   points_awarded INT DEFAULT 0,
+  attempt_count INT DEFAULT 0,
   answered_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(question_id, participant_id)
 );
+
+-- Migration for existing databases:
+-- ALTER TABLE answers ADD COLUMN IF NOT EXISTS attempt_count INT DEFAULT 0;
 
 -- ============================================
 -- INDEXES

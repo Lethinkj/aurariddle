@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     // Check if already answered this question
     const { data: existingAnswer } = await supabase
       .from("answers")
-      .select("id, is_correct")
+      .select("id, is_correct, attempt_count")
       .eq("question_id", question_id)
       .eq("participant_id", participant_id)
       .single();
@@ -46,6 +46,19 @@ export async function POST(req: NextRequest) {
         correct: true,
         already_answered: true,
         message: "You already answered this correctly!",
+      });
+    }
+
+    const MAX_ATTEMPTS = 5;
+    const currentAttemptCount = existingAnswer?.attempt_count || 0;
+
+    if (currentAttemptCount >= MAX_ATTEMPTS) {
+      return NextResponse.json({
+        correct: false,
+        out_of_attempts: true,
+        attempts_used: currentAttemptCount,
+        max_attempts: MAX_ATTEMPTS,
+        message: "No more attempts left for this question!",
       });
     }
 
@@ -73,6 +86,7 @@ export async function POST(req: NextRequest) {
           .update({
             is_correct: true,
             points_awarded: points,
+            attempt_count: currentAttemptCount + 1,
             answered_at: new Date().toISOString(),
           })
           .eq("id", existingAnswer.id);
@@ -82,6 +96,7 @@ export async function POST(req: NextRequest) {
           participant_id,
           is_correct: true,
           points_awarded: points,
+          attempt_count: 1,
         });
       }
 
@@ -137,21 +152,35 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Record incorrect answer (optional - don't block retries)
-      if (!existingAnswer) {
+      // Record/update incorrect answer with attempt count
+      const newAttemptCount = currentAttemptCount + 1;
+      if (existingAnswer) {
+        await supabase
+          .from("answers")
+          .update({ attempt_count: newAttemptCount })
+          .eq("id", existingAnswer.id);
+      } else {
         await supabase.from("answers").insert({
           question_id,
           participant_id,
           is_correct: false,
           points_awarded: 0,
+          attempt_count: 1,
         });
       }
+
+      const attemptsLeft = MAX_ATTEMPTS - newAttemptCount;
 
       return NextResponse.json({
         correct: false,
         points: 0,
         letter_hints: hints,
-        message: "Not quite! Check the hints and try again.",
+        attempts_used: newAttemptCount,
+        max_attempts: MAX_ATTEMPTS,
+        attempts_left: attemptsLeft,
+        message: attemptsLeft > 0
+          ? `Not quite! ${attemptsLeft} attempt${attemptsLeft === 1 ? "" : "s"} left.`
+          : "No more attempts! Better luck on the next question.",
       });
     }
   } catch {

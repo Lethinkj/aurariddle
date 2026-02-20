@@ -19,6 +19,13 @@ interface LeaderboardEntry {
   score: number;
 }
 
+interface Attempt {
+  letters: string[];
+  hints: string[];
+}
+
+const MAX_ATTEMPTS = 5;
+
 export default function PlayPage() {
   const params = useParams();
   const router = useRouter();
@@ -37,7 +44,8 @@ export default function PlayPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [answered, setAnswered] = useState(false);
-  const [letterHints, setLetterHints] = useState<string[]>([]);
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [outOfAttempts, setOutOfAttempts] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const leaderboardPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -77,7 +85,8 @@ export default function PlayPage() {
           setLetters(new Array(totalLetters).fill(""));
           setFeedback({ type: null, message: "" });
           setAnswered(false);
-          setLetterHints([]);
+          setAttempts([]);
+          setOutOfAttempts(false);
 
           // Focus first input after a short delay
           setTimeout(() => {
@@ -172,7 +181,7 @@ export default function PlayPage() {
 
   // Handle letter input
   const handleLetterChange = (index: number, value: string) => {
-    if (answered) return;
+    if (answered || outOfAttempts) return;
 
     const char = value.slice(-1).toUpperCase();
     if (char && !/^[A-Z]$/.test(char)) return;
@@ -181,10 +190,9 @@ export default function PlayPage() {
     newLetters[index] = char;
     setLetters(newLetters);
 
-    // Clear feedback on new input
+    // Clear inline feedback on new input
     if (feedback.type === "incorrect") {
       setFeedback({ type: null, message: "" });
-      setLetterHints([]);
     }
 
     // Auto-advance to next input
@@ -195,7 +203,7 @@ export default function PlayPage() {
 
   // Handle keyboard navigation
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (answered) return;
+    if (answered || outOfAttempts) return;
 
     if (e.key === "Backspace" && !letters[index] && index > 0) {
       const newLetters = [...letters];
@@ -219,7 +227,7 @@ export default function PlayPage() {
 
   // Submit answer
   const handleSubmit = async () => {
-    if (!currentQuestion || !participant || submitting || answered) return;
+    if (!currentQuestion || !participant || submitting || answered || outOfAttempts) return;
 
     // Check all letters are filled
     if (letters.some((l) => !l)) {
@@ -256,15 +264,31 @@ export default function PlayPage() {
       if (data.correct) {
         setFeedback({ type: "correct", message: data.message });
         setAnswered(true);
-        setLetterHints([]);
         fetchLeaderboard();
-      } else {
+      } else if (data.out_of_attempts) {
         setFeedback({ type: "incorrect", message: data.message });
-        // Show per-letter hints (green/yellow/gray)
-        if (data.letter_hints) {
-          setLetterHints(data.letter_hints);
+        setOutOfAttempts(true);
+      } else {
+        // Wrong answer — freeze this attempt with hints, open new row
+        const newAttempt: Attempt = {
+          letters: [...letters],
+          hints: data.letter_hints || [],
+        };
+        setAttempts((prev) => [...prev, newAttempt]);
+        setFeedback({ type: "incorrect", message: data.message });
+
+        if (data.attempts_left <= 0) {
+          setOutOfAttempts(true);
+        } else {
+          // Reset letters for next attempt and focus first input
+          const totalLetters = currentQuestion.answer_pattern.reduce(
+            (a: number, b: number) => a + b, 0
+          );
+          setLetters(new Array(totalLetters).fill(""));
+          setTimeout(() => {
+            inputRefs.current[0]?.focus();
+          }, 100);
         }
-        // Don't clear letters — let user see hints and correct their answer
       }
     } catch {
       setFeedback({ type: "incorrect", message: "Network error. Try again!" });
@@ -273,8 +297,8 @@ export default function PlayPage() {
     }
   };
 
-  // Render letter boxes with word grouping
-  const renderLetterBoxes = () => {
+  // Render a single row of letter boxes (for a previous attempt — read-only)
+  const renderAttemptRow = (attempt: Attempt, attemptIndex: number) => {
     if (!currentQuestion) return null;
 
     const pattern = currentQuestion.answer_pattern;
@@ -285,9 +309,43 @@ export default function PlayPage() {
       const boxes: React.ReactNode[] = [];
       for (let i = 0; i < pattern[w]; i++) {
         const idx = globalIndex;
-        const hintClass = letterHints[idx]
-          ? `hint-${letterHints[idx]}`
-          : "";
+        const hintClass = attempt.hints[idx] ? `hint-${attempt.hints[idx]}` : "";
+        boxes.push(
+          <div
+            key={idx}
+            className={`letter-box filled ${hintClass} pointer-events-none select-none flex items-center justify-center`}
+          >
+            {attempt.letters[idx] || ""}
+          </div>
+        );
+        globalIndex++;
+      }
+      words.push(
+        <div key={`word-${w}`} className="flex flex-wrap gap-1 sm:gap-1.5 md:gap-2 justify-center">
+          {boxes}
+        </div>
+      );
+    }
+
+    return (
+      <div key={`attempt-${attemptIndex}`} className="flex flex-wrap gap-3 sm:gap-4 md:gap-6 justify-center items-center opacity-75">
+        {words}
+      </div>
+    );
+  };
+
+  // Render the active input row of letter boxes
+  const renderActiveLetterBoxes = () => {
+    if (!currentQuestion) return null;
+
+    const pattern = currentQuestion.answer_pattern;
+    let globalIndex = 0;
+    const words: React.ReactNode[] = [];
+
+    for (let w = 0; w < pattern.length; w++) {
+      const boxes: React.ReactNode[] = [];
+      for (let i = 0; i < pattern[w]; i++) {
+        const idx = globalIndex;
         boxes.push(
           <input
             key={idx}
@@ -299,10 +357,10 @@ export default function PlayPage() {
             value={letters[idx] || ""}
             onChange={(e) => handleLetterChange(idx, e.target.value)}
             onKeyDown={(e) => handleKeyDown(idx, e)}
-            disabled={answered || submitting}
+            disabled={answered || submitting || outOfAttempts}
             className={`letter-box ${letters[idx] ? "filled" : ""} ${
               feedback.type === "correct" ? "correct" : ""
-            } ${hintClass}`}
+            }`}
             autoComplete="off"
             autoCapitalize="characters"
           />
@@ -411,12 +469,25 @@ export default function PlayPage() {
                 </p>
               </div>
 
-              {/* Letter Boxes */}
+              {/* Letter Boxes — stacked attempts */}
               <div className="glass-card p-6 sm:p-8">
-                {renderLetterBoxes()}
+                {/* Attempt counter */}
+                <div className="text-center mb-4">
+                  <span className="text-xs uppercase tracking-wider text-gray-500">
+                    Attempt {Math.min(attempts.length + 1, MAX_ATTEMPTS)} / {MAX_ATTEMPTS}
+                  </span>
+                </div>
 
-                {/* Hint Legend */}
-                {letterHints.length > 0 && (
+                <div className="space-y-3">
+                  {/* Previous attempts (read-only, with hints) */}
+                  {attempts.map((attempt, i) => renderAttemptRow(attempt, i))}
+
+                  {/* Current active input row */}
+                  {!answered && !outOfAttempts && renderActiveLetterBoxes()}
+                </div>
+
+                {/* Hint Legend — show if any attempts have been made */}
+                {attempts.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-4 justify-center text-xs text-neutral-400">
                     <span className="flex items-center gap-1.5">
                       <span className="w-3 h-3 rounded bg-green-600 inline-block" /> Correct spot
@@ -444,7 +515,7 @@ export default function PlayPage() {
                 )}
 
                 {/* Submit Button */}
-                {!answered && (
+                {!answered && !outOfAttempts && (
                   <div className="mt-6 text-center">
                     <button
                       onClick={handleSubmit}
@@ -453,6 +524,12 @@ export default function PlayPage() {
                     >
                       {submitting ? "Checking..." : "Submit Answer"}
                     </button>
+                  </div>
+                )}
+
+                {outOfAttempts && !answered && (
+                  <div className="mt-6 text-center text-gray-400">
+                    ❌ No more attempts. Waiting for next question...
                   </div>
                 )}
 
