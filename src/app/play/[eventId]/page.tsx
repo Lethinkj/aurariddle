@@ -47,8 +47,6 @@ export default function PlayPage() {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [outOfAttempts, setOutOfAttempts] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const leaderboardPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load participant info from localStorage
   useEffect(() => {
@@ -116,68 +114,38 @@ export default function PlayPage() {
     }
   }, [eventId]);
 
-  // Real-time subscription for event changes
+  // Supabase Realtime Broadcast subscriptions (pure WebSocket, no DB replication)
   useEffect(() => {
     if (!participant) return;
 
+    // Initial fetch
+    fetchCurrentQuestion();
+    fetchLeaderboard();
+
     const supabase = getSupabaseBrowser();
 
+    // Single channel for all event-related broadcasts
     const channel = supabase
-      .channel(`play-event-${eventId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "events",
-          filter: `id=eq.${eventId}`,
-        },
-        () => {
-          // Event updated - fetch new state
-          fetchCurrentQuestion();
-          fetchLeaderboard();
-        }
-      )
-      .subscribe();
-
-    // Also subscribe to participant updates for leaderboard
-    const leaderboardChannel = supabase
-      .channel(`play-leaderboard-${eventId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "participants",
-          filter: `event_id=eq.${eventId}`,
-        },
-        () => {
-          fetchLeaderboard();
-        }
-      )
+      .channel(`event:${eventId}`)
+      .on("broadcast", { event: "event-update" }, () => {
+        fetchCurrentQuestion();
+        fetchLeaderboard();
+      })
+      .on("broadcast", { event: "leaderboard-update" }, () => {
+        fetchLeaderboard();
+      })
+      .on("broadcast", { event: "participant-joined" }, () => {
+        fetchLeaderboard();
+      })
+      .on("broadcast", { event: "answer-submitted" }, () => {
+        fetchLeaderboard();
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
-      supabase.removeChannel(leaderboardChannel);
     };
   }, [participant, eventId, fetchCurrentQuestion, fetchLeaderboard]);
-
-  // Polling fallback (in case realtime doesn't fire)
-  useEffect(() => {
-    if (!participant) return;
-
-    fetchCurrentQuestion();
-    fetchLeaderboard();
-
-    pollRef.current = setInterval(fetchCurrentQuestion, 8000);
-    leaderboardPollRef.current = setInterval(fetchLeaderboard, 12000);
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-      if (leaderboardPollRef.current) clearInterval(leaderboardPollRef.current);
-    };
-  }, [participant, fetchCurrentQuestion, fetchLeaderboard]);
 
   // Handle letter input
   const handleLetterChange = (index: number, value: string) => {

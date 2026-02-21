@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin, broadcastToEvent } from "@/lib/supabase";
 
 const SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || "hardword_admin_secret_2024";
 
@@ -62,6 +62,7 @@ export async function POST(
           })
           .eq("id", eventId);
 
+        await broadcastToEvent(eventId, "event-update", { status: "active" });
         return NextResponse.json({ success: true, status: "active" });
       }
 
@@ -88,6 +89,7 @@ export async function POST(
             })
             .eq("id", eventId);
 
+          await broadcastToEvent(eventId, "event-update", { status: "completed" });
           return NextResponse.json({ success: true, status: "completed" });
         }
 
@@ -116,6 +118,7 @@ export async function POST(
           })
           .eq("id", eventId);
 
+        await broadcastToEvent(eventId, "event-update", { action: "next_question", questionIndex: nextIndex });
         return NextResponse.json({
           success: true,
           current_question_index: nextIndex,
@@ -139,6 +142,7 @@ export async function POST(
           })
           .eq("id", eventId);
 
+        await broadcastToEvent(eventId, "event-update", { status: "completed" });
         return NextResponse.json({ success: true, status: "completed" });
       }
 
@@ -163,6 +167,7 @@ export async function POST(
           .update({ is_active: false })
           .eq("event_id", eventId);
 
+        await broadcastToEvent(eventId, "event-update", { status: "draft" });
         return NextResponse.json({ success: true, status: "draft" });
       }
 

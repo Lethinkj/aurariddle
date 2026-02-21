@@ -76,3 +76,36 @@ export function generateEventCode(): string {
   }
   return code;
 }
+
+// ── Realtime Broadcast helpers ──────────────────────────────────
+// These send lightweight WebSocket messages to all subscribers on a
+// channel. No database replication required — pure pub/sub.
+
+export type BroadcastEvent =
+  | "event-update"      // event status / current question changed
+  | "leaderboard-update" // scores changed
+  | "participant-joined" // new player joined
+  | "answer-submitted"   // someone answered (for admin live view)
+  | "questions-update";  // questions added/removed (admin)
+
+/**
+ * Broadcast a realtime event to all subscribers of an event channel.
+ * Call this from server-side API routes after mutating data.
+ */
+export async function broadcastToEvent(
+  eventId: string,
+  event: BroadcastEvent,
+  payload: Record<string, unknown> = {}
+) {
+  const supabase = getSupabaseAdmin();
+  const channel = supabase.channel(`event:${eventId}`);
+
+  await channel.send({
+    type: "broadcast",
+    event,
+    payload: { ...payload, timestamp: Date.now() },
+  });
+
+  // Clean up the server-side channel after sending
+  await supabase.removeChannel(channel);
+}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin, broadcastToEvent } from "@/lib/supabase";
 
 const SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || "hardword_admin_secret_2024";
 
@@ -78,6 +78,7 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await broadcastToEvent(eventId, "questions-update", { action: "added" });
     return NextResponse.json({ question: data });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -124,6 +125,7 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await broadcastToEvent(eventId, "questions-update", { action: "deleted" });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });

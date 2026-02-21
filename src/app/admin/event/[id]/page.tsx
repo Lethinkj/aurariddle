@@ -48,49 +48,35 @@ export default function AdminEventPage() {
     fetchData();
   }, [fetchData]);
 
-  // Real-time subscriptions for live updates
+  // Realtime Broadcast subscriptions (pure WebSocket, no DB replication)
   useEffect(() => {
     if (!data?.event) return;
 
     const supabase = getSupabaseBrowser();
 
-    // Subscribe to participant changes
-    const participantChannel = supabase
-      .channel("admin-participants")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "participants",
-          filter: `event_id=eq.${eventId}`,
-        },
-        () => {
-          fetchData();
-        }
-      )
-      .subscribe();
-
-    // Subscribe to answer changes
-    const answerChannel = supabase
-      .channel("admin-answers")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "answers",
-        },
-        () => {
-          fetchData();
-          fetchCurrentAnswers();
-        }
-      )
+    // Single channel for all event-related broadcasts
+    const channel = supabase
+      .channel(`event:${eventId}`)
+      .on("broadcast", { event: "event-update" }, () => {
+        fetchData();
+      })
+      .on("broadcast", { event: "participant-joined" }, () => {
+        fetchData();
+      })
+      .on("broadcast", { event: "leaderboard-update" }, () => {
+        fetchData();
+      })
+      .on("broadcast", { event: "answer-submitted" }, () => {
+        fetchData();
+        fetchCurrentAnswers();
+      })
+      .on("broadcast", { event: "questions-update" }, () => {
+        fetchData();
+      })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(participantChannel);
-      supabase.removeChannel(answerChannel);
+      supabase.removeChannel(channel);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.event?.id, data?.event?.current_question_id]);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin, broadcastToEvent } from "@/lib/supabase";
 
 // POST: Submit an answer
 export async function POST(req: NextRequest) {
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
       // Update participant score
       const { data: participant } = await supabase
         .from("participants")
-        .select("score")
+        .select("score, event_id")
         .eq("id", participant_id)
         .single();
 
@@ -111,6 +111,12 @@ export async function POST(req: NextRequest) {
         .from("participants")
         .update({ score: (participant?.score || 0) + points })
         .eq("id", participant_id);
+
+      // Broadcast score update to all players
+      if (participant?.event_id) {
+        await broadcastToEvent(participant.event_id, "leaderboard-update", { participant_id, points, rank });
+        await broadcastToEvent(participant.event_id, "answer-submitted", { participant_id, question_id, points, rank });
+      }
 
       return NextResponse.json({
         correct: true,

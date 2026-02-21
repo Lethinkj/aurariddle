@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin, broadcastToEvent } from "@/lib/supabase";
 
 // POST: Join an event as a participant
 export async function POST(req: NextRequest) {
@@ -61,6 +61,9 @@ export async function POST(req: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Broadcast new player joined
+    await broadcastToEvent(event.id, "participant-joined", { name: name.trim() });
 
     return NextResponse.json({
       participant_id: participant.id,
