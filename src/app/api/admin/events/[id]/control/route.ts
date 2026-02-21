@@ -142,6 +142,30 @@ export async function POST(
         return NextResponse.json({ success: true, status: "completed" });
       }
 
+      case "reactivate": {
+        if (event.status !== "completed") {
+          return NextResponse.json({ error: "Only completed events can be reactivated" }, { status: 400 });
+        }
+
+        // Reset event back to draft
+        await supabase
+          .from("events")
+          .update({
+            status: "draft",
+            current_question_id: null,
+            current_question_index: -1,
+          })
+          .eq("id", eventId);
+
+        // Reset all questions to inactive
+        await supabase
+          .from("questions")
+          .update({ is_active: false })
+          .eq("event_id", eventId);
+
+        return NextResponse.json({ success: true, status: "draft" });
+      }
+
       default:
         return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }

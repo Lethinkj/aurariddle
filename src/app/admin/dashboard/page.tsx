@@ -13,6 +13,9 @@ export default function AdminDashboard() {
   const [creating, setCreating] = useState(false);
   const [newEventName, setNewEventName] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -61,6 +64,66 @@ export default function AdminDashboard() {
   const handleLogout = async () => {
     await fetch("/api/admin/login", { method: "DELETE" });
     router.push("/admin");
+  };
+
+  const handleDeleteEvent = async (e: React.MouseEvent, eventId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this event? This will delete all questions, participants, and answers permanently.")) return;
+    setActionLoading(eventId);
+    try {
+      const res = await fetch(`/api/admin/events/${eventId}`, { method: "DELETE" });
+      if (res.ok) {
+        fetchEvents();
+      }
+    } catch {
+      console.error("Failed to delete event");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleEditEvent = async (e: React.FormEvent, eventId: string) => {
+    e.preventDefault();
+    if (!editName.trim()) return;
+    setActionLoading(eventId);
+    try {
+      const res = await fetch(`/api/admin/events/${eventId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName.trim() }),
+      });
+      if (res.ok) {
+        setEditingId(null);
+        setEditName("");
+        fetchEvents();
+      }
+    } catch {
+      console.error("Failed to edit event");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReactivateEvent = async (e: React.MouseEvent, eventId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm("Reactivate this event? It will be set back to draft status so you can start it again.")) return;
+    setActionLoading(eventId);
+    try {
+      const res = await fetch(`/api/admin/events/${eventId}/control`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reactivate" }),
+      });
+      if (res.ok) {
+        fetchEvents();
+      }
+    } catch {
+      console.error("Failed to reactivate event");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const statusBadge = (status: string) => {
@@ -138,29 +201,86 @@ export default function AdminDashboard() {
       ) : (
         <div className="grid gap-4">
           {events.map((event) => (
-            <Link
+            <div
               key={event.id}
-              href={`/admin/event/${event.id}`}
-              className="glass-card p-6 hover:bg-white/10 transition-all duration-200 block"
+              className="glass-card p-6 hover:bg-white/10 transition-all duration-200"
             >
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-white">{event.name}</h3>
-                  <div className="flex items-center gap-3 text-sm text-gray-400">
-                    <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-gold-300">
-                      {event.code}
-                    </span>
-                    <span>
-                      {new Date(event.created_at).toLocaleDateString()}
-                    </span>
+              {editingId === event.id ? (
+                <form onSubmit={(e) => handleEditEvent(e, event.id)} className="flex gap-3 items-center">
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="input-field flex-1"
+                    placeholder="Event name"
+                    autoFocus
+                    required
+                  />
+                  <button type="submit" disabled={actionLoading === event.id} className="btn-primary text-sm whitespace-nowrap">
+                    {actionLoading === event.id ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setEditingId(null); setEditName(""); }}
+                    className="btn-secondary text-sm"
+                  >
+                    Cancel
+                  </button>
+                </form>
+              ) : (
+                <div className="flex items-center justify-between gap-4">
+                  <Link href={`/admin/event/${event.id}`} className="flex-1 min-w-0">
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-bold text-white">{event.name}</h3>
+                      <div className="flex items-center gap-3 text-sm text-gray-400">
+                        <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-gold-300">
+                          {event.code}
+                        </span>
+                        <span>
+                          {new Date(event.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {event.status === "completed" && (
+                      <button
+                        onClick={(e) => handleReactivateEvent(e, event.id)}
+                        disabled={actionLoading === event.id}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-all"
+                        title="Reactivate event"
+                      >
+                        ↻ Reactivate
+                      </button>
+                    )}
+                    {statusBadge(event.status)}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setEditingId(event.id);
+                        setEditName(event.name);
+                      }}
+                      className="p-2 text-gray-400 hover:text-gold-400 hover:bg-white/10 rounded-lg transition-all"
+                      title="Edit event name"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteEvent(e, event.id)}
+                      disabled={actionLoading === event.id}
+                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                      title="Delete event"
+                    >
+                      🗑
+                    </button>
+                    <Link href={`/admin/event/${event.id}`} className="text-gray-500 hover:text-gold-400">
+                      →
+                    </Link>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  {statusBadge(event.status)}
-                  <span className="text-gray-500">→</span>
-                </div>
-              </div>
-            </Link>
+              )}
+            </div>
           ))}
         </div>
       )}

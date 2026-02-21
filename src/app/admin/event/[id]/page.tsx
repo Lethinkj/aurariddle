@@ -257,12 +257,32 @@ export default function AdminEventPage() {
               </button>
             </>
           )}
+          {event.status === "completed" && (
+            <button
+              onClick={() => handleControl("reactivate")}
+              disabled={controlling}
+              className="px-6 py-3 bg-blue-600/80 text-white font-semibold rounded-xl hover:bg-blue-500/80 transition-all duration-200"
+            >
+              ↻ Reactivate Event
+            </button>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Questions */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Completed event banner */}
+          {event.status === "completed" && (
+            <div className="glass-card p-6 border-gold-500/30 text-center space-y-2">
+              <div className="text-4xl">🏆</div>
+              <h3 className="text-xl font-bold text-gold-300">Event Completed</h3>
+              <p className="text-sm text-gray-400">
+                This event has ended. You can review all questions and the leaderboard below.
+              </p>
+            </div>
+          )}
+
           {/* Current Question Display */}
           {event.status === "active" && currentQuestion && (
             <div className="glass-card p-6 border-gold-500/30 space-y-4">
@@ -396,11 +416,16 @@ export default function AdminEventPage() {
 
         {/* Right Column: Participants & Leaderboard */}
         <div className="space-y-6">
-          {/* Participants */}
+          {/* Leaderboard */}
           <div className="glass-card p-6 space-y-4">
-            <h2 className="text-lg font-bold text-gray-300">
-              Players ({participants.length})
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-300">
+                {event.status === "completed" ? "🏆 Leaderboard" : `Players (${participants.length})`}
+              </h2>
+              {event.status === "completed" && participants.length > 0 && (
+                <span className="text-xs text-gray-500">{participants.length} players</span>
+              )}
+            </div>
 
             {participants.length === 0 ? (
               <p className="text-sm text-gray-500">
@@ -409,17 +434,25 @@ export default function AdminEventPage() {
                 for players to join!
               </p>
             ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="space-y-2 max-h-[500px] overflow-y-auto">
                 {sortedParticipants.map((p, i) => (
                   <div
                     key={p.id}
-                    className="flex items-center justify-between bg-white/5 rounded-lg px-4 py-2"
+                    className={`flex items-center justify-between rounded-lg px-4 py-3 ${
+                      event.status === "completed" && i < 3
+                        ? i === 0
+                          ? "bg-yellow-500/10 border border-yellow-500/30"
+                          : i === 1
+                          ? "bg-gray-400/10 border border-gray-400/20"
+                          : "bg-amber-700/10 border border-amber-700/20"
+                        : "bg-white/5"
+                    }`}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <span
-                        className={`text-sm font-bold ${
+                        className={`text-sm font-bold w-8 text-center ${
                           i === 0
-                            ? "text-yellow-400"
+                            ? "text-yellow-400 text-lg"
                             : i === 1
                             ? "text-gray-300"
                             : i === 2
@@ -427,18 +460,57 @@ export default function AdminEventPage() {
                             : "text-gray-500"
                         }`}
                       >
-                        #{i + 1}
+                        {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
                       </span>
-                      <span className="text-white">{p.name}</span>
+                      <span className={`font-semibold ${i < 3 && event.status === "completed" ? "text-white text-base" : "text-white"}`}>
+                        {p.name}
+                      </span>
                     </div>
-                    <span className="text-gold-300 font-mono font-bold">
-                      {p.score}
+                    <span className={`font-mono font-bold ${
+                      i === 0 && event.status === "completed"
+                        ? "text-yellow-400 text-lg"
+                        : "text-gold-300"
+                    }`}>
+                      {p.score} pts
                     </span>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
+          {/* Event Stats for completed */}
+          {event.status === "completed" && participants.length > 0 && (
+            <div className="glass-card p-6 space-y-3">
+              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+                Event Summary
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white/5 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-gold-300">{questions.length}</p>
+                  <p className="text-xs text-gray-500">Questions</p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-gold-300">{participants.length}</p>
+                  <p className="text-xs text-gray-500">Players</p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-green-400">
+                    {sortedParticipants.length > 0 ? sortedParticipants[0].score : 0}
+                  </p>
+                  <p className="text-xs text-gray-500">Top Score</p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-blue-400">
+                    {participants.length > 0
+                      ? Math.round(participants.reduce((sum, p) => sum + p.score, 0) / participants.length)
+                      : 0}
+                  </p>
+                  <p className="text-xs text-gray-500">Avg Score</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Share Info */}
           <div className="glass-card p-6 space-y-3">
