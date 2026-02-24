@@ -39,6 +39,7 @@ export interface Question {
   answer: string;
   question_order: number;
   is_active: boolean;
+  started_at: string | null;
   created_at: string;
 }
 
@@ -86,6 +87,7 @@ export type BroadcastEvent =
   | "leaderboard-update" // scores changed
   | "participant-joined" // new player joined
   | "answer-submitted"   // someone answered (for admin live view)
+  | "wrong-answer"       // someone submitted a wrong answer (for presentation)
   | "questions-update";  // questions added/removed (admin)
 
 /**

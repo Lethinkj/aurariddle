@@ -29,6 +29,7 @@ CREATE TABLE questions (
   answer TEXT NOT NULL,
   question_order INT NOT NULL,
   is_active BOOLEAN DEFAULT FALSE,
+  started_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -53,12 +54,15 @@ CREATE TABLE answers (
   is_correct BOOLEAN DEFAULT FALSE,
   points_awarded INT DEFAULT 0,
   attempt_count INT DEFAULT 0,
+  time_taken_ms INT,
   answered_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(question_id, participant_id)
 );
 
 -- Migration for existing databases:
 -- ALTER TABLE answers ADD COLUMN IF NOT EXISTS attempt_count INT DEFAULT 0;
+-- ALTER TABLE questions ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;
+-- ALTER TABLE answers ADD COLUMN IF NOT EXISTS time_taken_ms INT;
 
 -- ============================================
 -- INDEXES

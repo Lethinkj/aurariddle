@@ -103,10 +103,10 @@ export async function POST(
             .eq("id", event.current_question_id);
         }
 
-        // Activate next question
+        // Activate next question and record start time
         await supabase
           .from("questions")
-          .update({ is_active: true })
+          .update({ is_active: true, started_at: new Date().toISOString() })
           .eq("id", nextQuestion.id);
 
         // Update event

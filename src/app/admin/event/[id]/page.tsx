@@ -216,6 +216,13 @@ export default function AdminEventPage() {
 
         {/* Control Buttons */}
         <div className="flex gap-2 flex-wrap">
+          <Link
+            href={`/present/${eventId}`}
+            target="_blank"
+            className="px-6 py-3 bg-purple-600/80 text-white font-semibold rounded-xl hover:bg-purple-500/80 transition-all duration-200"
+          >
+            📺 Presentation
+          </Link>
           {event.status === "draft" && questions.length > 0 && (
             <button
               onClick={() => handleControl("start")}

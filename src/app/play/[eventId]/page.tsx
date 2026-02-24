@@ -17,6 +17,7 @@ interface LeaderboardEntry {
   id: string;
   name: string;
   score: number;
+  total_time_ms: number | null;
 }
 
 interface Attempt {
@@ -572,9 +573,20 @@ export default function PlayPage() {
                       {entry.id === participant.participant_id && " (you)"}
                     </span>
                   </div>
-                  <span className="text-sm font-mono font-bold text-gold-300">
-                    {entry.score}
-                  </span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm font-mono font-bold text-gold-300">
+                      {entry.score}
+                    </span>
+                    {entry.total_time_ms != null && (
+                      <span className="text-[10px] text-gray-500">
+                        {(() => {
+                          const s = Math.floor(entry.total_time_ms! / 1000);
+                          const m = Math.floor(s / 60);
+                          return m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
+                        })()}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

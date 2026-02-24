@@ -79,6 +79,11 @@ export async function POST(req: NextRequest) {
       const rank = (count || 0) + 1;
       const points = Math.max(1, 11 - rank); // 1st: 10pts, 2nd: 9pts, ..., 10th+: 1pt
 
+      // Calculate time taken from question start
+      const timeTakenMs = question.started_at
+        ? Math.max(0, Date.now() - new Date(question.started_at).getTime())
+        : null;
+
       // Upsert the answer
       if (existingAnswer) {
         await supabase
@@ -88,6 +93,7 @@ export async function POST(req: NextRequest) {
             points_awarded: points,
             attempt_count: currentAttemptCount + 1,
             answered_at: new Date().toISOString(),
+            time_taken_ms: timeTakenMs,
           })
           .eq("id", existingAnswer.id);
       } else {
@@ -97,6 +103,7 @@ export async function POST(req: NextRequest) {
           is_correct: true,
           points_awarded: points,
           attempt_count: 1,
+          time_taken_ms: timeTakenMs,
         });
       }
 
@@ -172,6 +179,20 @@ export async function POST(req: NextRequest) {
           is_correct: false,
           points_awarded: 0,
           attempt_count: 1,
+        });
+      }
+
+      // Broadcast wrong answer for presentation page
+      const { data: wrongParticipant } = await supabase
+        .from("participants")
+        .select("name, event_id")
+        .eq("id", participant_id)
+        .single();
+
+      if (wrongParticipant?.event_id) {
+        await broadcastToEvent(wrongParticipant.event_id, "wrong-answer", {
+          participant_name: wrongParticipant.name,
+          wrong_answer: answer,
         });
       }
 
