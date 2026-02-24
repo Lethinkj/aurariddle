@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,6 +11,18 @@ export default function JoinPage() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Restore saved code & name from localStorage
+  useEffect(() => {
+    try {
+      const savedCode = localStorage.getItem("aurariddle_last_code");
+      const savedName = localStorage.getItem("aurariddle_last_name");
+      if (savedCode) setEventCode(savedCode);
+      if (savedName) setName(savedName);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +42,10 @@ export default function JoinPage() {
       const data = await res.json();
 
       if (res.ok) {
+        // Persist last used code & name for next visit
+        localStorage.setItem("aurariddle_last_code", eventCode.trim().toUpperCase());
+        localStorage.setItem("aurariddle_last_name", name.trim());
+
         // Store participant info in localStorage
         localStorage.setItem(
           `aurariddle_participant_${data.event_id}`,
