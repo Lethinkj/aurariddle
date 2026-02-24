@@ -23,6 +23,7 @@ interface CurrentQuestion {
   answer_pattern: number[];
   question_order: number;
   total_questions: number;
+  started_at: string | null;
 }
 
 export default function PresentationPage() {
@@ -34,7 +35,33 @@ export default function PresentationPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<CurrentQuestion | null>(null);
   const [wrongAnswers, setWrongAnswers] = useState<WrongAnswerToast[]>([]);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const toastIdRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Live timer: start/stop based on current question
+  useEffect(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (currentQuestion?.started_at) {
+      const startTime = new Date(currentQuestion.started_at).getTime();
+
+      const tick = () => {
+        setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+      };
+      tick(); // immediate first tick
+      timerRef.current = setInterval(tick, 1000);
+    } else {
+      setElapsedSeconds(0);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [currentQuestion?.id, currentQuestion?.started_at]);
 
   // Fetch leaderboard
   const fetchLeaderboard = useCallback(async () => {
@@ -141,6 +168,12 @@ export default function PresentationPage() {
     return `${seconds}s`;
   };
 
+  const formatElapsed = (totalSec: number) => {
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
   return (
     <div className="min-h-screen bg-[#050505] text-white flex flex-col relative overflow-x-hidden">
       {/* Background glow effects */}
@@ -188,7 +221,19 @@ export default function PresentationPage() {
                   Question {currentQuestion.question_order + 1} of{" "}
                   {currentQuestion.total_questions}
                 </span>
-                <div className="h-1 flex-1 mx-4 bg-white/5 rounded-full overflow-hidden">
+
+                {/* Live Timer */}
+                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2">
+                  <span className="text-gold-400 text-lg">⏱</span>
+                  <span className="text-2xl font-mono font-bold text-white tabular-nums">
+                    {formatElapsed(elapsedSeconds)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="mb-6">
+                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-gold-600 to-gold-400 rounded-full transition-all duration-500"
                     style={{

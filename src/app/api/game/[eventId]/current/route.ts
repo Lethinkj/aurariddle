@@ -48,7 +48,7 @@ export async function GET(
   // Fetch current question
   const { data: question } = await supabase
     .from("questions")
-    .select("id, question_text, answer, question_order")
+    .select("id, question_text, answer, question_order, started_at")
     .eq("id", event.current_question_id)
     .single();
 
@@ -82,6 +82,7 @@ export async function GET(
         answer_pattern: answerPattern,
         question_order: question.question_order,
         total_questions: totalQuestions || 0,
+        started_at: question.started_at || null,
       },
     },
     {

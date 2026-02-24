@@ -67,6 +67,7 @@ export interface QuestionPublic {
   answer_pattern: number[]; // word lengths e.g. [3, 4] for "NEW YORK"
   question_order: number;
   total_questions: number;
+  started_at: string | null;
 }
 
 export function generateEventCode(): string {

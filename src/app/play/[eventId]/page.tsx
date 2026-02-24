@@ -47,7 +47,44 @@ export default function PlayPage() {
   const [answered, setAnswered] = useState(false);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [outOfAttempts, setOutOfAttempts] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Live timer per question
+  useEffect(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (currentQuestion?.started_at && !answered && !outOfAttempts) {
+      const startTime = new Date(currentQuestion.started_at).getTime();
+      const tick = () => {
+        setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+      };
+      tick();
+      timerRef.current = setInterval(tick, 1000);
+    } else if (answered || outOfAttempts) {
+      // Stop timer but keep the displayed value
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    } else {
+      setElapsedSeconds(0);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [currentQuestion?.id, currentQuestion?.started_at, answered, outOfAttempts]);
+
+  const formatElapsed = (totalSec: number) => {
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
 
   // Load participant info from localStorage
   useEffect(() => {
@@ -419,12 +456,21 @@ export default function PlayPage() {
                     Question {currentQuestion.question_order + 1} of{" "}
                     {currentQuestion.total_questions}
                   </span>
-                  {!answered && (
-                    <span className="flex items-center gap-1.5 text-xs text-green-400">
-                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      LIVE
+                  <div className="flex items-center gap-3">
+                    {/* Live Timer */}
+                    <span className="flex items-center gap-1.5 text-sm font-mono font-bold text-gold-300 bg-white/5 border border-white/10 rounded-lg px-3 py-1">
+                      ⏱ {formatElapsed(elapsedSeconds)}
                     </span>
-                  )}
+                    {!answered && !outOfAttempts && (
+                      <span className="flex items-center gap-1.5 text-xs text-green-400">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        LIVE
+                      </span>
+                    )}
+                    {answered && (
+                      <span className="text-xs text-green-400 font-semibold">✓ ANSWERED</span>
+                    )}
+                  </div>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-white">
                   {currentQuestion.question_text}
