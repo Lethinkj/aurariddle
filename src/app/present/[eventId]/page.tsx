@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
-import { getSupabaseBrowser } from "@/lib/supabase";
+import { useRealtimeWithFallback } from "@/lib/useRealtimeWithFallback";
 
 interface LeaderboardEntry {
   id: string;
@@ -99,49 +99,35 @@ export default function PresentationPage() {
     fetchCurrentQuestion();
   }, [fetchLeaderboard, fetchCurrentQuestion]);
 
-  // Realtime subscriptions
-  useEffect(() => {
-    const supabase = getSupabaseBrowser();
-
-    const channel = supabase
-      .channel(`event:${eventId}`)
-      .on("broadcast", { event: "event-update" }, () => {
-        fetchCurrentQuestion();
-        fetchLeaderboard();
-      })
-      .on("broadcast", { event: "leaderboard-update" }, () => {
-        fetchLeaderboard();
-      })
-      .on("broadcast", { event: "participant-joined" }, () => {
-        fetchLeaderboard();
-      })
-      .on("broadcast", { event: "answer-submitted" }, () => {
-        fetchLeaderboard();
-      })
-      .on("broadcast", { event: "wrong-answer" }, (payload) => {
-        const data = payload.payload as {
-          participant_name: string;
-          wrong_answer: string;
-        };
-        const id = ++toastIdRef.current;
-        const toast: WrongAnswerToast = {
-          id,
-          participant_name: data.participant_name,
-          wrong_answer: data.wrong_answer,
-        };
-        setWrongAnswers((prev) => [...prev, toast]);
-
-        // Remove after 5 seconds
-        setTimeout(() => {
-          setWrongAnswers((prev) => prev.filter((t) => t.id !== id));
-        }, 5000);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [eventId, fetchCurrentQuestion, fetchLeaderboard]);
+  // Realtime with automatic polling fallback when WebSocket fails
+  useRealtimeWithFallback({
+    eventId,
+    enabled: true,
+    subscriptions: [
+      { event: "event-update", handler: () => { fetchCurrentQuestion(); fetchLeaderboard(); } },
+      { event: "leaderboard-update", handler: () => fetchLeaderboard() },
+      { event: "participant-joined", handler: () => fetchLeaderboard() },
+      { event: "answer-submitted", handler: () => fetchLeaderboard() },
+      {
+        event: "wrong-answer",
+        handler: (payload: unknown) => {
+          const p = (payload as { payload: { participant_name: string; wrong_answer: string } }).payload;
+          const id = ++toastIdRef.current;
+          const toast: WrongAnswerToast = {
+            id,
+            participant_name: p.participant_name,
+            wrong_answer: p.wrong_answer,
+          };
+          setWrongAnswers((prev) => [...prev, toast]);
+          setTimeout(() => {
+            setWrongAnswers((prev) => prev.filter((t) => t.id !== id));
+          }, 5000);
+        },
+      },
+    ],
+    pollingCallbacks: [fetchCurrentQuestion, fetchLeaderboard],
+    pollingInterval: 3000,
+  });
 
   const getRankStyle = (index: number) => {
     if (index === 0) return "text-yellow-400";

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Event, Question, Participant } from "@/lib/supabase";
-import { getSupabaseBrowser } from "@/lib/supabase";
+import { useRealtimeWithFallback } from "@/lib/useRealtimeWithFallback";
 
 interface EventDetails {
   event: Event;
@@ -48,40 +48,7 @@ export default function AdminEventPage() {
     fetchData();
   }, [fetchData]);
 
-  // Realtime Broadcast subscriptions (pure WebSocket, no DB replication)
-  useEffect(() => {
-    if (!data?.event) return;
-
-    const supabase = getSupabaseBrowser();
-
-    // Single channel for all event-related broadcasts
-    const channel = supabase
-      .channel(`event:${eventId}`)
-      .on("broadcast", { event: "event-update" }, () => {
-        fetchData();
-      })
-      .on("broadcast", { event: "participant-joined" }, () => {
-        fetchData();
-      })
-      .on("broadcast", { event: "leaderboard-update" }, () => {
-        fetchData();
-      })
-      .on("broadcast", { event: "answer-submitted" }, () => {
-        fetchData();
-        fetchCurrentAnswers();
-      })
-      .on("broadcast", { event: "questions-update" }, () => {
-        fetchData();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.event?.id, data?.event?.current_question_id]);
-
-  const fetchCurrentAnswers = async () => {
+  const fetchCurrentAnswers = useCallback(async () => {
     if (!data?.event?.current_question_id) return;
     try {
       const res = await fetch(
@@ -94,7 +61,22 @@ export default function AdminEventPage() {
     } catch {
       // ignore
     }
-  };
+  }, [data?.event?.current_question_id, eventId]);
+
+  // Realtime with automatic polling fallback when WebSocket fails
+  useRealtimeWithFallback({
+    eventId,
+    enabled: !!data?.event,
+    subscriptions: [
+      { event: "event-update", handler: () => fetchData() },
+      { event: "participant-joined", handler: () => fetchData() },
+      { event: "leaderboard-update", handler: () => fetchData() },
+      { event: "answer-submitted", handler: () => { fetchData(); fetchCurrentAnswers(); } },
+      { event: "questions-update", handler: () => fetchData() },
+    ],
+    pollingCallbacks: [fetchData, fetchCurrentAnswers],
+    pollingInterval: 3000,
+  });
 
   useEffect(() => {
     if (data?.event?.current_question_id) {

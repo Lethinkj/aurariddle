@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getSupabaseBrowser, type QuestionPublic } from "@/lib/supabase";
+import { type QuestionPublic } from "@/lib/supabase";
+import { useRealtimeWithFallback } from "@/lib/useRealtimeWithFallback";
 
 interface ParticipantInfo {
   participant_id: string;
@@ -152,38 +153,26 @@ export default function PlayPage() {
     }
   }, [eventId]);
 
-  // Supabase Realtime Broadcast subscriptions (pure WebSocket, no DB replication)
+  // Initial fetch when participant loads
   useEffect(() => {
     if (!participant) return;
-
-    // Initial fetch
     fetchCurrentQuestion();
     fetchLeaderboard();
+  }, [participant, fetchCurrentQuestion, fetchLeaderboard]);
 
-    const supabase = getSupabaseBrowser();
-
-    // Single channel for all event-related broadcasts
-    const channel = supabase
-      .channel(`event:${eventId}`)
-      .on("broadcast", { event: "event-update" }, () => {
-        fetchCurrentQuestion();
-        fetchLeaderboard();
-      })
-      .on("broadcast", { event: "leaderboard-update" }, () => {
-        fetchLeaderboard();
-      })
-      .on("broadcast", { event: "participant-joined" }, () => {
-        fetchLeaderboard();
-      })
-      .on("broadcast", { event: "answer-submitted" }, () => {
-        fetchLeaderboard();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [participant, eventId, fetchCurrentQuestion, fetchLeaderboard]);
+  // Realtime with automatic polling fallback when WebSocket fails
+  useRealtimeWithFallback({
+    eventId,
+    enabled: !!participant,
+    subscriptions: [
+      { event: "event-update", handler: () => { fetchCurrentQuestion(); fetchLeaderboard(); } },
+      { event: "leaderboard-update", handler: () => fetchLeaderboard() },
+      { event: "participant-joined", handler: () => fetchLeaderboard() },
+      { event: "answer-submitted", handler: () => fetchLeaderboard() },
+    ],
+    pollingCallbacks: [fetchCurrentQuestion, fetchLeaderboard],
+    pollingInterval: 3000,
+  });
 
   // Handle letter input
   const handleLetterChange = (index: number, value: string) => {
